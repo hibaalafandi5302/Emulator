@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>محاكي مستكشف الملفات - ICDL</title>
+<style>
+:root{--bg:#e9eef7;--card:#fff;--tx:#1b2333;--mut:#667085;--pri:#2f5bd6;--bd:#d3d9e6;--sel:#cfe0ff;--ok:#1a8a4a;--hd:#2f5bd6}
+@media (prefers-color-scheme:dark){:root{color-scheme:dark;--bg:#12151c;--card:#1b202b;--tx:#e8ecf4;--mut:#9aa4b8;--pri:#6b8cff;--bd:#313a4d;--sel:#263a6b;--ok:#4cd187;--hd:#24305a}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.5 "Segoe UI",Tahoma,Arial,sans-serif;padding:max(10px,env(safe-area-inset-top)) 10px max(10px,env(safe-area-inset-bottom))}
+.wrap{display:grid;grid-template-columns:1fr 270px;gap:12px;max-width:1100px;margin:auto}
+@media(max-width:780px){.wrap{grid-template-columns:1fr}}
+.win,.card{background:var(--card);border:1px solid var(--bd);border-radius:10px;overflow:hidden}
+.card{padding:12px}.card h3{margin:0 0 6px}
+.win.max{position:fixed;inset:0;z-index:5;border-radius:0;display:flex;flex-direction:column}
+.win.max .c{flex:1;height:auto}
+.tb{background:var(--hd);color:#fff;padding:6px 10px;display:flex;justify-content:space-between;align-items:center}
+.wb button{background:transparent;border:0;color:#fff;font-size:16px;padding:2px 10px;cursor:pointer}
+.bar{display:flex;flex-wrap:wrap;gap:6px;padding:8px;border-bottom:1px solid var(--bd);align-items:center}
+.b{font:inherit;font-size:13px;background:transparent;color:inherit;border:1px solid var(--bd);border-radius:8px;padding:5px 9px;cursor:pointer}
+.b:hover,.b.on{border-color:var(--pri);background:var(--sel)}
+.p{background:var(--pri);color:#fff;border-color:var(--pri)}
+input,select{font:inherit;font-size:13px;background:transparent;color:inherit;border:1px solid var(--bd);border-radius:8px;padding:5px 8px}
+#ad{color:var(--mut);font-size:13px}
+.c{height:360px;overflow:auto;padding:8px}
+.st{padding:6px 10px;border-top:1px solid var(--bd);color:var(--mut);font-size:13px}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th{text-align:right;border-bottom:1px solid var(--bd);padding:5px;cursor:pointer;white-space:nowrap}
+td{padding:5px;white-space:nowrap}
+.it{cursor:pointer;user-select:none;border-radius:6px}
+.it.s,tr.s{background:var(--sel)}
+.gi{display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:8px}
+.gi .it{text-align:center;padding:8px;word-break:break-word;font-size:13px}
+.gi .ic{display:block;font-size:34px}
+.gl{columns:200px}.gl .it{padding:4px 6px;break-inside:avoid}
+.em{color:var(--mut);text-align:center;margin-top:60px}
+#ms ol{list-style:none;padding:0;margin:8px 0}
+#ms li{padding:4px 0;font-size:14px;border-bottom:1px dashed var(--bd)}
+#ms li.ok{color:var(--ok)}
+.pb{height:8px;background:var(--bd);border-radius:8px;overflow:hidden}.pb i{display:block;height:100%;background:var(--ok)}
+.win2{background:var(--sel);padding:8px;border-radius:8px;font-weight:700}
+#dl{position:fixed;inset:0;background:#0007;z-index:20;display:flex;align-items:center;justify-content:center}
+#dl[hidden],#re[hidden]{display:none}
+.dg{background:var(--card);padding:16px;border-radius:12px;width:min(340px,90vw);display:grid;gap:10px}
+#re{padding:20px;text-align:center}
+#ts{position:fixed;bottom:max(14px,env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);background:#222;color:#fff;padding:8px 14px;border-radius:20px;font-size:14px;opacity:0;transition:.3s;pointer-events:none;z-index:30;max-width:90vw;text-align:center}
+#ts.on{opacity:1}
+</style>
+</head>
+<body>
+<div class="wrap">
+<div>
+ <div id="win" class="win">
+  <div class="tb"><span>🗂️ مستكشف الملفات</span><span class="wb"><button onclick="wmode('min')" title="تصغير">—</button><button onclick="wmode('max')" title="تكبير">▢</button><button onclick="wmode('x')" title="إغلاق">✕</button></span></div>
+  <div id="body">
+   <div class="bar" id="tl"></div>
+   <div class="bar"><button class="b" onclick="go('r')">🖥️ سطح المكتب</button><button class="b" onclick="go('bin')">🗑️ سلة المحذوفات</button><button class="b" onclick="goUp()">⬆ للأعلى</button><span id="ad"></span></div>
+   <div class="bar">
+    <input id="q" placeholder="🔍 بحث (مثال: *.docx)" oninput="srch()">
+    <select id="qt" onchange="srch()"><option value="">كل الأنواع</option><option value="doc">Word</option><option value="xls">Excel</option><option value="ppt">PowerPoint</option><option value="pdf">PDF</option><option value="img">صور</option><option value="txt">نص</option></select>
+    <select id="qs" onchange="srch()"><option value="">أي حجم</option><option value="big">أكبر من 1 MB</option><option value="small">أصغر من 100 KB</option></select>
+    <button class="b" id="vi" onclick="sv('i')">أيقونات</button><button class="b" id="vl" onclick="sv('l')">قائمة</button><button class="b" id="vd" onclick="sv('d')">تفاصيل</button>
+    <select id="sk" onchange="sk=this.value;R()"><option value="n">فرز: الاسم</option><option value="t">فرز: النوع</option><option value="s">فرز: الحجم</option><option value="d">فرز: التاريخ</option></select>
+    <button class="b" onclick="sd=-sd;R()">⇅</button>
+   </div>
+   <div id="c" class="c"></div>
+   <div id="st" class="st"></div>
+  </div>
+  <div id="re" hidden><p id="rt"></p><button class="b p" onclick="wm='';wmode('')">فتح النافذة</button></div>
+ </div>
+ <p style="color:var(--mut);font-size:13px">اختصارات: Ctrl+A تحديد الكل · Ctrl+C نسخ · Ctrl+X قص · Ctrl+V لصق · Delete حذف · F2 إعادة تسمية · انقر مرتين لفتح مجلد</p>
+</div>
+<aside class="card" id="ms"></aside>
+</div>
+<div id="dl" hidden></div><div id="ts"></div>
+<script>
+const $=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const T=new Date().toISOString().slice(0,10),t0=Date.now();
+const K={dir:['📁','مجلد'],doc:['📘','مستند Word'],xls:['📗','جدول Excel'],ppt:['📙','عرض PowerPoint'],pdf:['📕','PDF'],img:['🖼️','صورة'],txt:['📄','ملف نصي'],zip:['🗜️','مجلد مضغوط'],lnk:['🔗','اختصار']};
+let N=[],uid=0,cur='r',sel=new Set(),clip=null,view='i',sk='n',sd=1,q='',qt='',qs='',multi=false,F={},wm='',last=null,order=[];
+const mk=(n,k,s,d,p,x)=>{const o=Object.assign({id:'i'+(++uid),n,k,s,d,p},x||{});N.push(o);return o};
+[['تقرير_المبيعات_2025.docx','doc',36,'2025-03-02'],['تقرير_المبيعات_2025 - نسخة.docx','doc',36,'2025-03-05'],['محضر_اجتماع.docx','doc',36,'2025-01-14'],['عقد_توريد.docx','doc',36,'2024-11-20'],['ميزانية_الشهر.xlsx','xls',5,'2025-02-10'],['قائمة_الموظفين.xlsx','xls',5,'2024-12-01'],['جدول_المخزون.xlsx','xls',5,'2025-04-18'],['عرض_المشروع.pptx','ppt',28,'2025-05-03'],['فاتورة_101.pdf','pdf',90,'2025-02-01'],['فاتورة_102.pdf','pdf',95,'2025-02-15'],['فاتورة_103.pdf','pdf',88,'2025-03-01'],['دليل_المستخدم.pdf','pdf',1800,'2024-10-10'],['شعار_الشركة.png','img',381,'2024-09-09'],['صورة_المنتج.jpg','img',558,'2025-04-01'],['خلفية_المكتب.jpg','img',1145,'2025-01-30'],['ملاحظات.txt','txt',1,'2025-05-10'],['ملف_كبير.txt','txt',4000,'2024-08-08'],['قائمة_مهام.txt','txt',1,'2025-05-12']].forEach(a=>mk(a[0],a[1],a[2],a[3],'r'));
+const by=id=>N.find(x=>x.id==id),kids=id=>N.filter(x=>x.p==id);
+const size=x=>x.k=='dir'?kids(x.id).reduce((a,c)=>a+size(c),0):x.s;
+const fmt=k=>k>=1024?(k/1024).toFixed(1)+' MB':Math.max(1,Math.round(k))+' KB';
+const inTree=x=>{while(x){if(x.p=='r')return true;x=by(x.p)}return false};
+const under=(x,id)=>{while(x){if(x.id==id)return true;x=by(x.p)}return false};
+const pth=id=>id=='r'?'سطح المكتب':id=='bin'?'سلة المحذوفات':pth(by(id).p)+' › '+by(id).n;
+const uniq=(n,p)=>{const s=kids(p).map(x=>x.n);if(!s.includes(n))return n;const i=n.lastIndexOf('.'),b=i>0?n.slice(0,i):n,e=i>0?n.slice(i):'';let c=n,k=0;while(s.includes(c)){c=b+' - نسخة'+(k?' ('+k+')':'')+e;k++}return c};
+const clone=(x,p,nm)=>{const c=mk(nm||x.n,x.k,x.s,x.d,p,{t:x.t,mine:x.mine});kids(x.id).forEach(k=>clone(k,c.id));if(x.k=='zip')kids('z'+x.id).forEach(k=>clone(k,'z'+c.id));return c};
+const rm=x=>{kids(x.id).forEach(rm);kids('z'+x.id).forEach(rm);N=N.filter(y=>y!=x)};
+const searching=()=>q||qt||qs;
+function list(){let a;if(searching()){const re=q?new RegExp(q.replace(/[.+?^${}()|[\]\\]/g,'\\$&').replace(/\*/g,'.*'),'i'):null;a=N.filter(x=>inTree(x)&&(!re||re.test(x.n))&&(!qt||x.k==qt)&&(!qs||(x.k!='dir'&&(qs=='big'?x.s>1024:x.s<100))))}else a=kids(cur);
+ const g=x=>sk=='n'?x.n:sk=='t'?K[x.k][1]:sk=='s'?size(x):x.d;
+ return a.sort((p,r)=>{const A=g(p),B=g(r);return(typeof A=='number'?A-B:String(A).localeCompare(String(B),'ar'))*sd})}
+function toast(m){const t=$('#ts');t.textContent=m;t.className='on';clearTimeout(toast.h);toast.h=setTimeout(()=>t.className='',2200)}
+function box(t,v,cb){const d=$('#dl');d.innerHTML='<div class="dg"><b>'+t+'</b><input id="di" value="'+esc(v)+'"><div><button class="b p" id="dk">موافق</button> <button class="b" id="dc">إلغاء</button></div></div>';d.hidden=false;const i=$('#di');i.focus();i.select();
+ const ok=()=>{const val=i.value;d.hidden=true;cb(val)};$('#dk').onclick=ok;$('#dc').onclick=()=>d.hidden=true;i.onkeydown=e=>{if(e.key=='Enter')ok();if(e.key=='Escape')d.hidden=true}}
+const bad=v=>{if(!v.trim())return true;if(/[\\/:*?"<>|]/.test(v)){toast('الاسم لا يمكن أن يحتوي على \\ / : * ? " < > |');return true}return false};
+function act(a){const S=[...sel].map(by).filter(Boolean);
+ if(a=='all'){sel=new Set(order);if(sel.size>=3)F.multi=1}
+ else if(a=='mul'){multi=!multi}
+ else if(a=='new'){box('اسم المجلد الجديد','مجلد جديد',v=>{if(bad(v))return;mk(uniq(v.trim(),cur),'dir',0,T,cur,{mine:1});R()});return}
+ else if(a=='copy'||a=='cut'){if(!S.length)return toast('حدّد عناصر أولاً');clip={ids:S.map(x=>x.id),cut:a=='cut'};toast(a=='cut'?'تم القص ✂️':'تم النسخ 📋')}
+ else if(a=='paste'){if(!clip)return toast('لا يوجد شيء للصق');if(cur=='bin')return;
+  clip.ids.map(by).filter(Boolean).forEach(x=>{if(clip.cut){if(under(by(cur),x.id)||x.p==cur)return;const n=uniq(x.n,cur);x.p=cur;x.n=n}else clone(x,cur,uniq(x.n,cur))});if(clip.cut)clip=null;sel.clear()}
+ else if(a=='del'){if(!S.length)return toast('حدّد عناصر أولاً');S.forEach(x=>{x.o=x.p;x.p='bin'});sel.clear();F.del=1;toast('نُقلت إلى سلة المحذوفات')}
+ else if(a=='res'){if(!S.length)return toast('حدّد عناصر لاستعادتها');S.forEach(x=>{x.p=(x.o=='r'||!by(x.o))?'r':x.o});sel.clear();F.res=1;toast('تمت الاستعادة ♻️')}
+ else if(a=='emp'){if(!kids('bin').length)return toast('السلة فارغة');kids('bin').forEach(rm);F.emp=1;sel.clear();toast('تم إفراغ السلة')}
+ else if(a=='ren'){if(S.length!=1)return toast('حدّد عنصراً واحداً');const x=S[0];box('اسم جديد',x.n,v=>{if(bad(v))return;if(kids(x.p).some(y=>y!=x&&y.n==v.trim()))return toast('يوجد عنصر بنفس الاسم');x.n=v.trim();R()});return}
+ else if(a=='lnk'){if(!S.length)return toast('حدّد عناصر أولاً');S.forEach(x=>{if(x.k!='lnk')mk(uniq(x.n+' - اختصار',cur),'lnk',1,T,cur,{t:x.id})})}
+ else if(a=='zip'){if(!S.length)return toast('حدّد عناصر أولاً');const z=mk(uniq((S.length>1?'أرشيف':S[0].n.replace(/\.[^.]+$/,''))+'.zip',cur),'zip',0,T,cur),r={txt:.05,doc:.8,xls:.8,ppt:.9,pdf:.9,img:.98,dir:.7},t=0;S.forEach(x=>{clone(x,'z'+z.id);t+=size(x)*(r[x.k]||1)});z.s=Math.max(1,Math.round(t));toast('تم الضغط 🗜️ الحجم الجديد '+fmt(z.s))}
+ else if(a=='unz'){const Z=S.filter(x=>x.k=='zip');if(!Z.length)return toast('حدّد ملف ZIP');Z.forEach(z=>{const f=mk(uniq(z.n.replace(/\.zip$/i,''),cur),'dir',0,T,cur);kids('z'+z.id).forEach(k=>clone(k,f.id))});toast('تم الاستخراج 📂')}
+ R()}
+function clk(e,id){if(e.ctrlKey||e.metaKey||multi){sel.has(id)?sel.delete(id):sel.add(id)}else if(e.shiftKey&&last){const a=order.indexOf(last),b=order.indexOf(id);sel=new Set(order.slice(Math.min(a,b),Math.max(a,b)+1))}else sel=new Set([id]);last=id;if(sel.size>=3)F.multi=1;R()}
+function opn(id){const x=by(id);if(x.k=='dir')go(x.id);else if(x.k=='lnk'){const t=by(x.t);t&&t.k=='dir'&&t.p!='bin'?go(t.id):toast('هذا اختصار إلى: '+(t?t.n:'عنصر محذوف'))}else if(x.k=='zip')toast('حدّد الملف واضغط «استخراج»');else toast('هذا محاكي: لا يمكن فتح «'+x.n+'»')}
+function go(id){cur=id;sel.clear();q=qt=qs='';$('#q').value=$('#qt').value=$('#qs').value='';R()}
+function goUp(){if(cur=='r'||cur=='bin')return go('r');go(by(cur).p)}
+function srch(){q=$('#q').value.trim();qt=$('#qt').value;qs=$('#qs').value;sel.clear();R()}
+function sv(v){view=v;R()}
+function srt(c){sk==c?sd=-sd:(sk=c,sd=1);R()}
+function wmode(m){if(m)wm=wm==m?'':m;F.win=1;$('#win').classList.toggle('max',wm=='max');const h=wm=='min'||wm=='x';$('#body').hidden=h;$('#re').hidden=!h;$('#rt').textContent=wm=='x'?'تم إغلاق النافذة ✕':'النافذة مصغّرة —';R()}
+function R(){
+ const L=list();order=L.map(x=>x.id);const bin=cur=='bin'&&!searching();
+ if(view=='d'&&sk=='s')F.sort=1;if(qt=='pdf')F.pdf=1;if(qs=='big')F.big=1;
+ $('#tl').innerHTML=(bin?[['res','♻️ استعادة'],['emp','🧹 إفراغ السلة']]:[['new','📁 مجلد جديد'],['copy','نسخ'],['cut','✂️ قص'],['paste','📋 لصق'],['del','🗑 حذف'],['ren','✏️ إعادة تسمية'],['lnk','🔗 اختصار'],['zip','🗜 ضغط'],['unz','📂 استخراج'],['all','تحديد الكل']]).map(a=>'<button class="b" onclick="act(\''+a[0]+'\')">'+a[1]+'</button>').join('')+'<button class="b'+(multi?' on':'')+'" onclick="act(\'mul\')">☑ تحديد متعدد</button>';
+ ['i','l','d'].forEach(v=>$('#v'+v).classList.toggle('on',view==v));$('#sk').value=sk;
+ $('#ad').textContent=searching()?'نتائج البحث ('+L.length+')':pth(cur);
+ const ev=x=>' onclick="clk(event,\''+x.id+'\')" ondblclick="opn(\''+x.id+'\')"',S=x=>sel.has(x.id)?' s':'';
+ let h;
+ if(!L.length)h='<p class="em">'+(searching()?'لا توجد نتائج':'المجلد فارغ')+'</p>';
+ else if(view=='d')h='<table><tr>'+[['n','الاسم'],['t','النوع'],['s','الحجم'],['d','تاريخ التعديل']].map(c=>'<th onclick="srt(\''+c[0]+'\')">'+c[1]+(sk==c[0]?(sd>0?' ▲':' ▼'):'')+'</th>').join('')+(searching()?'<th>المكان</th>':'')+'</tr>'+L.map(x=>'<tr class="it'+S(x)+'"'+ev(x)+'><td>'+K[x.k][0]+' '+esc(x.n)+'</td><td>'+K[x.k][1]+'</td><td>'+(x.k=='dir'?'':fmt(size(x)))+'</td><td>'+x.d+'</td>'+(searching()?'<td>'+esc(pth(x.p))+'</td>':'')+'</tr>').join('')+'</table>';
+ else h='<div class="'+(view=='i'?'gi':'gl')+'">'+L.map(x=>'<div class="it'+S(x)+'"'+ev(x)+'><span class="ic">'+K[x.k][0]+'</span>'+esc(x.n)+'</div>').join('')+'</div>';
+ $('#c').innerHTML=h;
+ $('#st').textContent=L.length+' عنصر'+(sel.size?' · محدد: '+sel.size:'')+(clip?' · في الحافظة: '+clip.ids.length:'');
+ miss()}
+const M=[['أنشئ مجلداً جديداً',()=>N.some(x=>x.mine&&x.k=='dir')],['انسخ 3 ملفات أو أكثر داخل المجلد الجديد',()=>N.some(x=>x.mine&&x.k=='dir'&&kids(x.id).length>=3)],['حدّد عدة ملفات معاً (Ctrl+نقر أو Ctrl+A)',()=>F.multi],['اعرض الملفات بالتفاصيل وافرزها حسب الحجم',()=>F.sort],['احذف ملفاً ثم استعده من السلة',()=>F.del&&F.res],['أنشئ اختصاراً لملف',()=>N.some(x=>x.k=='lnk')],['ابحث عن ملفات PDF فقط',()=>F.pdf],['ابحث عن الملفات الأكبر من 1 MB',()=>F.big],['اضغط ملفات في ملف ZIP',()=>N.some(x=>x.k=='zip')],['كبّر النافذة أو صغّرها',()=>F.win],['أفرغ سلة المحذوفات',()=>F.emp]];
+function miss(){const d=M.map(m=>m[1]()?1:0),n=d.reduce((a,b)=>a+b,0);
+ $('#ms').innerHTML='<h3>🎯 المهام</h3><div class="pb"><i style="width:'+n/M.length*100+'%"></i></div><small>'+n+' / '+M.length+'</small><ol>'+M.map((m,i)=>'<li class="'+(d[i]?'ok':'')+'">'+(d[i]?'✅ ':'⬜ ')+m[0]+'</li>').join('')+'</ol>'+(n==M.length?'<p class="win2">🎉 أحسنت! أنجزت كل المهام خلال '+Math.max(1,Math.ceil((Date.now()-t0)/60000))+' دقيقة.</p>':'')+'<button class="b" onclick="location.reload()">↺ إعادة البدء</button>'}
+document.addEventListener('keydown',e=>{if(!$('#dl').hidden||/INPUT|SELECT|TEXTAREA/.test(e.target.tagName))return;const c=e.ctrlKey||e.metaKey,k=e.code;
+ if(c&&k=='KeyA'){e.preventDefault();act('all')}else if(c&&k=='KeyC'){e.preventDefault();act('copy')}else if(c&&k=='KeyX'){e.preventDefault();act('cut')}else if(c&&k=='KeyV'){e.preventDefault();act('paste')}else if(e.key=='Delete'&&cur!='bin')act('del');else if(e.key=='F2'){e.preventDefault();act('ren')}});
+R();
+</script>
+</body>
+</html>
